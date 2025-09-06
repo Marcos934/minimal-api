@@ -1,15 +1,12 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
 using MinimalApi.Dominio.Entidades;
 
 namespace MinimalApi.Infraestrutura.Db;
 
 public class DbContexto : DbContext
 {
-    private readonly IConfiguration _configuracaoAppSettings;
-    public DbContexto(IConfiguration configuracaoAppSettings)
-    {
-        _configuracaoAppSettings = configuracaoAppSettings;
-    }
+    public DbContexto(DbContextOptions<DbContexto> options) : base(options) {}
 
     public DbSet<Administrador> Administradores { get; set; } = default!;
     public DbSet<Veiculo> Veiculos { get; set; } = default!;
@@ -25,19 +22,23 @@ public class DbContexto : DbContext
              }
         );
     }
+}
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+public class DbContextoFactory : IDesignTimeDbContextFactory<DbContexto>
+{
+    public DbContexto CreateDbContext(string[] args)
     {
-        if(!optionsBuilder.IsConfigured)
-        {
-            var stringConexao = _configuracaoAppSettings.GetConnectionString("MySql")?.ToString();
-            if(!string.IsNullOrEmpty(stringConexao))
-            {
-                optionsBuilder.UseMySql(
-                    stringConexao,
-                    ServerVersion.AutoDetect(stringConexao)
-                );
-            }
-        }
+        var optionsBuilder = new DbContextOptionsBuilder<DbContexto>();
+
+        // Lê o appsettings.json para obter a string de conexão em tempo de design
+        IConfigurationRoot configuration = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json")
+            .Build();
+
+        var connectionString = configuration.GetConnectionString("MySql");
+        optionsBuilder.UseSqlite(connectionString);
+
+        return new DbContexto(optionsBuilder.Options);
     }
 }
