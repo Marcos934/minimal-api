@@ -73,9 +73,8 @@ public class Startup
         });
 
         services.AddDbContext<DbContexto>(options => {
-            options.UseMySql(
-                Configuration.GetConnectionString("MySql"),
-                ServerVersion.AutoDetect(Configuration.GetConnectionString("MySql"))
+            options.UseSqlite(
+                Configuration.GetConnectionString("MySql")
             );
         });
 
